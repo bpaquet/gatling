@@ -56,7 +56,8 @@ object Check {
               checkRec(newSession, tail, failure)
 
             case f: Failure =>
-              checkRec(currentSession, tail, if (failure.isDefined) failure else Some(f))
+              val newSession = currentSession.set("lastError", "Check error: " + f.message)
+              checkRec(newSession, tail, if (failure.isDefined) failure else Some(f))
           }
       }
 
