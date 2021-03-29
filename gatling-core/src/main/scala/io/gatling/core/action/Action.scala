@@ -16,6 +16,8 @@
 
 package io.gatling.core.action
 
+import java.io.{ PrintWriter, StringWriter }
+
 import scala.util.control.NonFatal
 
 import io.gatling.commons.util.Clock
@@ -74,10 +76,14 @@ trait ChainableAction extends Action {
       case NonFatal(reason) =>
         if (logger.underlying.isInfoEnabled) {
           logger.error(s"'$name' crashed on session $session, forwarding to the next one", reason)
+          next ! session.markAsFailed
         } else {
           logger.error(s"'$name' crashed with '${reason.detailedMessage}', forwarding to the next one")
+          val sw = new StringWriter
+          reason.printStackTrace(new PrintWriter(sw))
+          logger.error(sw.toString)
+          next ! session.markAsFailed.set(s"lastStackTrace", sw.toString)
         }
-        next ! session.markAsFailed
     }
 
   def recover(session: Session)(v: Validation[_]): Unit =
